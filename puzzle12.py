@@ -65,7 +65,7 @@ def count_combinations(pattern, descriptor):
     if pattern[group] == '#':
         return 0
     descriptor = descriptor[1:]
-    pattern = pattern[group + 1:]  # after gropup ends assume '.' (only option even for '?' to close group)
+    pattern = pattern[group + 1:]  # after group ends assume '.' (only option even for '?' to close group)
     if descriptor:
         return count_combinations(pattern, descriptor)
     return 0 if '#' in pattern else 1
@@ -73,7 +73,7 @@ def count_combinations(pattern, descriptor):
 
 def part_1():
     patterns = read_data()
-    combinations = (count_combinations_bf(pattern, descriptor) for pattern, descriptor in patterns.items())
+    combinations = (count_combinations(pattern, descriptor) for pattern, descriptor in patterns.items())
     return sum(combinations)
 
 
