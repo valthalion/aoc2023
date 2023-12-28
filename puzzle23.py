@@ -1,9 +1,4 @@
-import sys
-
 import networkx as nx
-
-
-sys.setrecursionlimit(50_000)
 
 
 testing = False
@@ -18,14 +13,29 @@ neighbours = {
 }
 
 
-def build_graph(cells):
-    graph = nx.DiGraph()
+def build_graph(cells, use_digraph):
+    graph = nx.DiGraph() if use_digraph else nx.Graph()
     for (r, c), value in cells.items():
         for dr, dc in neighbours[value]:
             other_cell = (r + dr, c + dc)
             if other_cell in cells:
-                graph.add_edge((r, c), other_cell)
+                graph.add_edge((r, c), other_cell, weight=1)
     return graph
+
+
+def collapse(graph):
+    while True:
+        to_collapse = None
+        for node in graph:
+            if len(graph[node]) == 2:
+                to_collapse = node
+                break
+        if to_collapse is None:
+            break
+        new_edge = tuple(graph[node])
+        new_weight = sum(graph[node][dest]['weight'] for dest in graph[node])
+        graph.remove_node(node)
+        graph.add_edge(*new_edge, weight=new_weight)
 
 
 def read_data(ignore_slopes=False):
@@ -48,7 +58,11 @@ def read_data(ignore_slopes=False):
             end = (r, c)
             if start is not None:
                 break
-    graph = build_graph(cells)
+    if ignore_slopes:
+        graph = build_graph(cells, use_digraph=False)
+        collapse(graph)
+    else:
+        graph = build_graph(cells, use_digraph=True)
     return graph, start, end
 
 
@@ -73,4 +87,13 @@ def part_1():
 
 def part_2():
     graph, start, end = read_data(ignore_slopes=True)
-    return max_len_path(graph, start, end)
+
+    def path_len(path):
+        prev = path[0]
+        total = 0
+        for node in path[1:]:
+            total += graph[prev][node]['weight']
+            prev = node
+        return total
+
+    return max(nx.all_simple_paths(graph, start, end), key=path_len)
