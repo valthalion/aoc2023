@@ -1,3 +1,6 @@
+from sympy import symbols, solve
+
+
 testing = False
 
 
@@ -57,7 +60,25 @@ def part_1():
 
 
 def part_2():
-    blocks = read_data()
-    fall(blocks)
-    fall_chains = chain_reaction(blocks)
-    return sum(fall_chains.values())
+    lines = read_data()
+    x1, y1, z1 = lines[0].start
+    x2, y2, z2 = lines[1].start
+    x3, y3, z3 = lines[2].start
+    vx1, vy1, vz1 = lines[0].speed
+    vx2, vy2, vz2 = lines[1].speed
+    vx3, vy3, vz3 = lines[2].speed
+
+    x, y, z = symbols('x'), symbols('y'), symbols('z')
+    vx, vy, vz = symbols('vx'), symbols('vy'), symbols('vz')
+    sols = solve([
+        (x-x1)*(vy-vy1)-(y-y1)*(vx-vx1), (y-y1)*(vz-vz1)-(z-z1)*(vy-vy1), 
+        (x-x2)*(vy-vy2)-(y-y2)*(vx-vx2), (y-y2)*(vz-vz2)-(z-z2)*(vy-vy2), 
+        (x-x3)*(vy-vy3)-(y-y3)*(vx-vx3), (y-y3)*(vz-vz3)-(z-z3)*(vy-vy3)
+        ],
+        [x, y, z, vx, vy, vz], dict=True
+    )
+    # select solution with integer speed components
+    for s in sols:
+        if s[vx] == int(s[vx]) and s[vy] == int(s[vy]) and s[vz] == int(s[vz]):
+            break
+    return s[x] + s[y] + s[z]
