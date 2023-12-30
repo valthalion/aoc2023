@@ -1,3 +1,6 @@
+from functools import cache
+
+
 testing = False
 
 
@@ -9,22 +12,22 @@ def compress(pattern):
             continue
         new_pattern.append(c)
         last = c
-    while new_pattern[-1] == '.':
+    while new_pattern and new_pattern[-1] == '.':
         new_pattern.pop()
     return ''.join(new_pattern)
 
 
 def read_data(extend=False):
     filename = 'puzzle12_test.in' if testing else 'puzzle12.in'
-    patterns = {}
+    patterns = []
     with open(filename, 'r') as f:
         for line in f:
             pattern, descriptor = line.strip().split()
             descriptor = tuple(int(n) for n in descriptor.split(','))
             if extend:
-                pattern = ''.join(c * 5 for c in pattern)
-                descriptor = tuple(n * 5 for n in descriptor)
-            patterns[pattern] = descriptor
+                pattern = '?'.join(pattern for _ in range(5))
+                descriptor = descriptor * 5
+            patterns.append((pattern, descriptor))
     return patterns
 
 
@@ -34,30 +37,22 @@ def variants(pattern):
         p = queue.pop()
         idx = p.find('?')
         if idx == -1:
-            yield p
+            yield compress(p)
             continue
         queue.append(f'{p[:idx]}#{p[idx+1:]}')
         queue.append(f'{p[:idx]}.{p[idx+1:]}')
 
 
-def check(pattern, descriptor):
-    groups, group = [], 0
-    for c in pattern:
-        if c == '#':
-            group += 1
-        else:
-            if group:
-                groups.append(group)
-                group = 0
-    if group:
-        groups.append(group)
-    return tuple(groups) == descriptor
+def pattern_from_descriptor(descriptor):
+    return '.'.join('#' * n for n in descriptor)
 
 
 def count_combinations_bf(pattern, descriptor):
-    return sum(1 for variant in variants(pattern) if check(variant, descriptor))
+    descriptor_pattern = pattern_from_descriptor(descriptor)
+    return sum(1 for variant in variants(pattern) if variant == descriptor_pattern)
 
 
+@cache
 def count_combinations(pattern, descriptor):
     while pattern and pattern[0] == '.':
         pattern = pattern[1:]
@@ -87,11 +82,11 @@ def count_combinations(pattern, descriptor):
 
 def part_1():
     patterns = read_data()
-    combinations = (count_combinations_bf(compress(pattern), descriptor) for pattern, descriptor in patterns.items())
+    combinations = (count_combinations(compress(pattern), descriptor) for pattern, descriptor in patterns)
     return sum(combinations)
 
 
 def part_2():
     patterns = read_data(extend=True)
-    combinations = (count_combinations(pattern, descriptor) for pattern, descriptor in patterns.items())
+    combinations = (count_combinations(compress(pattern), descriptor) for pattern, descriptor in patterns)
     return sum(combinations)
